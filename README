@@ -1,0 +1,9 @@
+import all pics from iphoto into a simple flat structure, without
+pulling any metadata or whatnot out of iphoto (cause we don't use it).
+why flat structure? cause there's no need to make a hierarchy,
+and secondary, that works a bit easier with gqview/geeqie
+iphoto folder hierarchy is not related to dates when the images were taken (i think they denote an import time);
+also currently, often files will appear multiple times (presumably same image imported multiple times)
+and also different images can have the same filename (two iphones with colliding image id's?)
+since we can't really get them per-device out of iphoto (nor without the hierarchy), we parse the exif data
+and rely on that.
