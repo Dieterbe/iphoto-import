@@ -10,7 +10,7 @@ if egrep -q "[[:space:]]" <<< "$path_prefix"; then
 fi
 
 rm -rvf "${path_prefix}"*.auto_generated.new
-echo "processing files..."
+echo "processing files in $iphoto_in (symlinking to $path_prefix<device>.auto_generated.new if it's new)"
 while read file; do
     set -o pipefail # normally i would just use $PIPESTATUS but that seems to not work in a subshell
     # unfortunately, the output of the exiv2 command can contain bogus (trailing) whitespace..
@@ -24,7 +24,7 @@ while read file; do
     if [ -z "$device" ]; then
         device='unknown'
     fi
-    dir="$iphoto_out/$(basename "$iphoto_in")_${device}.auto_generated.new"
+    dir="$path_prefix${device}.auto_generated.new"
     mkdir -p "$dir" || die_error "Can't mkdir -p '$dir'"
     cd "$dir" || die_error "Can't cd '$dir'"
     base="$(basename "$file")"
