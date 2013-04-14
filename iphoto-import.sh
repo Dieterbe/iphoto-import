@@ -40,7 +40,7 @@ while read file; do
         fi
         # if files don't differ, this is just one of the (sometimes many) dupes within the iphoto library. so no action needed.
     else
-        ln -s "$file" .
+        ln -r -s "$file" .
     fi
     cd - > /dev/null || die_error "Can't cd back after going into '$dir'"
 done < <(find "$iphoto_in" -type f | grep -v AppleDouble)
