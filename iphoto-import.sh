@@ -3,8 +3,13 @@
 
 source /usr/lib/libui.sh
 source "$(dirname "$0")"/config.sh
-echo "cleaning old incompleted dirs.."
-rm -rvf "$iphoto_out/$(basename "$iphoto_in")_"*.auto_generated.new
+path_prefix="$iphoto_out/$(basename "$iphoto_in")_"
+echo "cleaning old incompleted dirs.. ('${path_prefix}*.auto_generated.new')"
+if egrep -q "[[:space:]]" <<< "$path_prefix"; then
+    die_error "whitespace in path prefix: $path_prefix"
+fi
+
+rm -rvf "${path_prefix}"*.auto_generated.new
 echo "processing files..."
 while read file; do
     set -o pipefail # normally i would just use $PIPESTATUS but that seems to not work in a subshell
