@@ -3,7 +3,7 @@ import pictures from iphoto
 
 in:
 * iphoto directory
-* doesn't pull any metadata or whatnot out of iphoto database (cause we don't use it).
+* doesn't pull any metadata or whatnot out of iphoto database (cause we don't use it) (though we do use EXIF)
 
 out:
 * directory where all pictures go into subdirectories per camera used
