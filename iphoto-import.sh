@@ -10,7 +10,7 @@ if egrep -q "[[:space:]]" <<< "$path_prefix"; then
 fi
 
 rm -rvf "${path_prefix}"*.auto_generated.new
-echo "processing files in $iphoto_in (symlinking to $path_prefix<device>.auto_generated.new if it's new)"
+echo "processing files in $iphoto_in (symlinking to $path_prefix<device>.auto_generated.new)"
 while read file; do
     set -o pipefail # normally i would just use $PIPESTATUS but that seems to not work in a subshell
     # unfortunately, the output of the exiv2 command can contain bogus (trailing) whitespace..
@@ -18,8 +18,15 @@ while read file; do
     ret=$?
     # it exit(253)'s on success. wtf.
     if [ $ret -gt 0 -a $ret -ne 253 ]; then
-        echo "skipping '$file', because exiv2 couldn't get the model from it"
-        continue
+        # get lowercase ext
+        ext="${file##*.}"; ext="${ext,,}"
+        if [ "$ext" = 'mov' ] || [ "$ext" = 'mp4' ]; then
+            # this is to be expected. silently ignore
+            true
+        else
+            echo "warning: skipping '$file', because exiv2 couldn't get the model from it"
+            continue
+        fi
     fi
     if [ -z "$device" ]; then
         device='unknown'
