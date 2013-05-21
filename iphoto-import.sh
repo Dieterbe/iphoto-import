@@ -2,7 +2,19 @@
 # TODO: make faster
 
 source /usr/lib/libui.sh
+
+# for some pairs of known files, on manual inspection they look the same. maybe a bit error or something...
+function files_diff_but_really_same () {
+    md5sum=$(md5sum "$1" "$2" | cut -d' ' -f1 | sort | md5sum | cut -d' ' -f1)
+    [ $md5sum == 7d253cbdb83e9532c3be858481104614 ]
+}
+
+function files_same () {
+    diff -q "$1" "$2" >/dev/null
+}
+
 source "$(dirname "$0")"/config.sh
+
 path_prefix="$iphoto_out/$(basename "$iphoto_in")_"
 echo "cleaning old incompleted dirs.. ('${path_prefix}*.auto_generated.new')"
 if egrep -q "[[:space:]]" <<< "$path_prefix"; then
@@ -35,20 +47,32 @@ while read file; do
     mkdir -p "$dir" || die_error "Can't mkdir -p '$dir'"
     cd "$dir" || die_error "Can't cd '$dir'"
     base="$(basename "$file")"
+    new_base="$base"
     if [ -e "$base" ]; then
-        if ! diff -q "$base" "$file" >/dev/null; then
-            # for some pairs of known files, we ignore this. on manual inspection they look the same. maybe a bit error or something...
-            md5sum=$(md5sum "$base" "$file" | cut -d' ' -f1 | sort | md5sum | cut -d' ' -f1)
-            if [ $md5sum == 7d253cbdb83e9532c3be858481104614 ]; then
-                true
-            else
-                die_error "'$dir/$(basename "$file")' already exists and is different, can't symlink to '$file'"
+        if files_same "$base" "$file"; then
+            # this is just one of the (sometimes many) dupes within the iphoto library, don't create a new link
+            new_base=
+        elif files_diff_but_really_same "$base" "$file"; then
+            # don't create a new link for a few known cases
+            new_base=
+        else
+            ext="${base##*.}"
+            base_no_ext="${base%.*}"
+            for i in {1..10000}; do
+                new_base="${base_no_ext}_dup$i.$ext"
+                # we tried all existing dup files, this one is not taken yet, so use it.
+                [ ! -f "$new_base" ] && break
+                # if this dup file is the same file as $file, we don't need to create a new link
+                files_same "$new_base" "$file" && new_base= && break
+            done
+            if [ -n "$new_base" ]; then
+                # we went through the entire loop, all dup files exist
+                [ ! -f "$new_base" ] || die_error "way too many different files trying to bring $file into $dir/${base_no_ext}*.$ext"
+                echo "warning: saving dupfile $new_base for $file, because $base already existed"
             fi
         fi
-        # if files don't differ, this is just one of the (sometimes many) dupes within the iphoto library. so no action needed.
-    else
-        ln -r -s "$file" .
     fi
+    [ -n "$new_base" ] && ln -r -s "$file" "$new_base"
     cd - > /dev/null || die_error "Can't cd back after going into '$dir'"
 done < <(find "$iphoto_in" -type f | grep -v AppleDouble)
 echo "finishing up new directories.."
